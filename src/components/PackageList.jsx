@@ -38,6 +38,11 @@ export default function PackageList({ packages }) {
             </div>
             <div style={s.body}>
               <p style={s.addr}>{pkg.address}</p>
+              {pkg.matched && pkg.groupStops?.length > 1 && (
+                <p style={s.groupHint}>
+                  📦 {pkg.groupStops.length} pacotes aqui: {pkg.groupStops.map(n => String(n).padStart(2, '0')).join(' - ')}
+                </p>
+              )}
               {pkg.matched && pkg.circuitAddress !== pkg.address && (
                 <p style={s.circuitAddr}>Circuit: {pkg.circuitAddress}</p>
               )}
@@ -78,6 +83,7 @@ const s = {
   },
   body: { flex: 1, minWidth: 0 },
   addr: { fontSize: 13, color: '#222', margin: 0, lineHeight: 1.3 },
+  groupHint: { fontSize: 11, color: '#ef6c00', fontWeight: 700, margin: '2px 0 0' },
   circuitAddr: { fontSize: 11, color: '#1e88e5', margin: '2px 0 0', fontStyle: 'italic' },
   code: { fontSize: 11, color: '#999', fontFamily: 'monospace', margin: '3px 0 0' },
   score: { fontSize: 11, color: '#aaa', flexShrink: 0 },
