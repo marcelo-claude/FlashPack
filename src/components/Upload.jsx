@@ -1,17 +1,12 @@
 import { useRef, useState } from 'react'
 import { parseCircuitPDF } from '../utils/parseCircuit'
-import { parseShopeeXLSX } from '../utils/parseShopee'
-import { matchPackages } from '../utils/matchPackages'
+import { buildPackages } from '../utils/matchPackages'
 
 export default function Upload({ onReady }) {
   const [circuit, setCircuit] = useState(null)
-  const [shopee, setShopee] = useState(null)
   const [circuitError, setCircuitError] = useState(null)
-  const [shopeeError, setShopeeError] = useState(null)
   const [loadingCircuit, setLoadingCircuit] = useState(false)
-  const [loadingShopee, setLoadingShopee] = useState(false)
   const pdfRef = useRef()
-  const xlsxRef = useRef()
 
   async function handlePDF(e) {
     const file = e.target.files[0]
@@ -19,37 +14,21 @@ export default function Upload({ onReady }) {
     e.target.value = ''
     setLoadingCircuit(true)
     setCircuitError(null)
+    setCircuit(null)
     try {
       const stops = await parseCircuitPDF(file)
-      setCircuit(stops)
-      if (shopee) cruzar(stops, shopee)
+      if (!stops.some(s => s.spxTn)) {
+        setCircuitError('Este PDF não contém os códigos SPX TN. No Circuit, ao exportar a rota, marque a opção "SPX TN" e gere o PDF novamente.')
+        return
+      }
+      const pkgs = buildPackages(stops)
+      setCircuit(pkgs)
+      onReady(pkgs)
     } catch (err) {
       setCircuitError(err.message)
     } finally {
       setLoadingCircuit(false)
     }
-  }
-
-  async function handleXLSX(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    e.target.value = ''
-    setLoadingShopee(true)
-    setShopeeError(null)
-    try {
-      const pkgs = await parseShopeeXLSX(file)
-      setShopee(pkgs)
-      if (circuit) cruzar(circuit, pkgs)
-    } catch (err) {
-      setShopeeError(err.message)
-    } finally {
-      setLoadingShopee(false)
-    }
-  }
-
-  function cruzar(stops, pkgs) {
-    const matched = matchPackages(stops, pkgs)
-    onReady(matched)
   }
 
   return (
@@ -60,13 +39,12 @@ export default function Upload({ onReady }) {
         <p style={s.sub}>Escaneie pacotes pela rota do Circuit</p>
       </div>
 
-      {/* PDF do Circuit */}
       <div style={s.card}>
         <div style={s.cardHeader}>
           <span style={s.cardIcon}>📄</span>
           <div>
             <p style={s.cardTitle}>Rota do Circuit</p>
-            <p style={s.cardDesc}>Exporte o PDF da rota no app Circuit</p>
+            <p style={s.cardDesc}>Exporte o PDF da rota com a coluna <strong>SPX TN</strong> marcada</p>
           </div>
           {circuit && <span style={s.ok}>✓ {circuit.length} paradas</span>}
         </div>
@@ -78,36 +56,16 @@ export default function Upload({ onReady }) {
         {circuitError && <p style={s.err}>⚠️ {circuitError}</p>}
       </div>
 
-      {/* XLSX da Shopee */}
-      <div style={s.card}>
-        <div style={s.cardHeader}>
-          <span style={s.cardIcon}>📦</span>
-          <div>
-            <p style={s.cardTitle}>Planilha da Shopee</p>
-            <p style={s.cardDesc}>Arquivo .xlsx exportado do app da Shopee</p>
-          </div>
-          {shopee && <span style={s.ok}>✓ {shopee.length} pacotes</span>}
-        </div>
-        <input ref={xlsxRef} type="file" accept=".xlsx,.xls" onChange={handleXLSX} style={{ display: 'none' }} />
-        <button style={{ ...s.btn, background: shopee ? '#e8f5e9' : '#FF6B2B', color: shopee ? '#2e7d32' : '#fff' }}
-          onClick={() => xlsxRef.current.click()} disabled={loadingShopee}>
-          {loadingShopee ? 'Lendo planilha...' : shopee ? '✓ Planilha carregada — trocar' : 'Selecionar planilha'}
-        </button>
-        {shopeeError && <p style={s.err}>⚠️ {shopeeError}</p>}
-      </div>
-
-      {circuit && shopee && (
+      {circuit ? (
         <div style={s.hint}>
-          ✓ Dados cruzados automaticamente — vá para <strong>Pacotes</strong> ou <strong>Scanner</strong>
+          ✓ {circuit.length} paradas carregadas — vá para <strong>Pacotes</strong> ou <strong>Scanner</strong>
         </div>
-      )}
-
-      {(!circuit || !shopee) && (
+      ) : (
         <div style={s.steps}>
           <p style={s.stepsTitle}>Como usar</p>
-          <p style={s.step}>1. No Circuit, abra a rota do dia e exporte o PDF</p>
-          <p style={s.step}>2. No app da Shopee, baixe o arquivo .xlsx</p>
-          <p style={s.step}>3. Carregue os dois arquivos aqui</p>
+          <p style={s.step}>1. No Circuit, abra a rota do dia (já otimizada)</p>
+          <p style={s.step}>2. Ao exportar o PDF, marque a opção <strong>SPX TN</strong></p>
+          <p style={s.step}>3. Carregue o PDF aqui</p>
           <p style={s.step}>4. Vá para Scanner e leia o QR de cada pacote</p>
         </div>
       )}
@@ -136,7 +94,7 @@ const s = {
   },
   err: {
     marginTop: 10, padding: '8px 12px', background: '#fff3f3',
-    border: '1px solid #fcc', borderRadius: 8, color: '#c00', fontSize: 13,
+    border: '1px solid #fcc', borderRadius: 8, color: '#c00', fontSize: 13, lineHeight: 1.5,
   },
   hint: {
     background: '#e8f5e9', border: '1px solid #a5d6a7', borderRadius: 10,
