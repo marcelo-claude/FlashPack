@@ -7,93 +7,50 @@ function normalize(str) {
     .trim()
 }
 
-// Extrai apenas rua + número (antes de qualquer vírgula com texto não-numérico)
+// Extrai apenas rua + número (antes de qualquer complemento)
 function extractStreetNum(addr) {
   const norm = normalize(addr)
-  // Pega as primeiras palavras até um número de rua (ex: "rua das flores 123")
   const m = norm.match(/^(.{5,60}?\d+)/)
   return m ? m[1].trim() : norm.substring(0, 40)
 }
 
 // Tipos de logradouro que não devem influenciar o agrupamento por endereço
-// (a planilha mistura "Rua"/"R", "Avenida"/"Av" etc. para a mesma rua)
 const STREET_TYPES = new Set([
   'rua', 'r', 'av', 'ave', 'avenida', 'travessa', 'tv', 'tr', 'alameda', 'al',
   'praca', 'estrada', 'estr', 'rod', 'rodovia', 'viela', 'vl', 'largo', 'via', 'viaduto',
 ])
 
 // Chave de agrupamento: só rua (sem tipo de logradouro) + número.
-// Ignora complementos (apto, casa, bloco...) para juntar pacotes do mesmo endereço.
 function groupKey(addr) {
-  const short = extractStreetNum(addr) // ex: "rua jorge beretta 963"
+  const short = extractStreetNum(addr)
   const m = short.match(/^(.*?)(\d+)\s*$/)
   if (!m) return short
   const name = m[1].trim().split(' ').filter(w => w && !STREET_TYPES.has(w))
   return name.join(' ') + '|' + m[2]
 }
 
-function wordOverlap(a, b) {
-  const wa = new Set(a.split(' ').filter(w => w.length > 2))
-  const wb = new Set(b.split(' ').filter(w => w.length > 2))
-  if (!wa.size || !wb.size) return 0
-  let hits = 0
-  for (const w of wa) if (wb.has(w)) hits++
-  return hits / Math.max(wa.size, wb.size)
-}
-
-export function matchPackages(circuitStops, shopeePackages) {
-  // Agrupa as paradas do Circuit por rua+número. Assim, ao bipar um pacote,
-  // sabemos todos os números de parada que existem naquele mesmo endereço.
-  const circuitGroups = new Map()
-  for (const stop of circuitStops) {
-    const key = groupKey(stop.address)
-    if (!circuitGroups.has(key)) circuitGroups.set(key, new Set())
-    circuitGroups.get(key).add(stop.stopNumber)
+// Transforma as paradas do Circuit (já com spxTn) em pacotes.
+// Cada parada é um pacote; agrupa paradas no mesmo endereço (rua+número)
+// para alimentar o recurso de múltiplos pacotes no mesmo local (01/02/03).
+export function buildPackages(stops) {
+  const groups = new Map()
+  for (const s of stops) {
+    const key = groupKey(s.address)
+    if (!groups.has(key)) groups.set(key, new Set())
+    groups.get(key).add(s.stopNumber)
   }
 
-  // Para cada pacote Shopee, achar o stop do Circuit com maior similaridade
-  const results = shopeePackages.map(pkg => {
-    const shopeeAddr = normalize(pkg.address + ' ' + pkg.city)
-    const shopeeShort = extractStreetNum(pkg.address)
-
-    let bestStop = null
-    let bestScore = 0
-
-    for (const stop of circuitStops) {
-      const circuitAddr = normalize(stop.address)
-      const circuitShort = extractStreetNum(stop.address)
-
-      // Verifica se o endereço curto da Shopee está contido no Circuit
-      let score = 0
-      if (circuitAddr.includes(shopeeShort) || shopeeAddr.includes(circuitShort)) {
-        score = 0.9
-      } else {
-        score = wordOverlap(shopeeAddr, circuitAddr)
-      }
-
-      if (score > bestScore) {
-        bestScore = score
-        bestStop = stop
-      }
-    }
-
-    const matched = bestScore >= 0.55
-    // Todos os números de parada no mesmo endereço (rua+número) do stop casado
-    const groupStops = matched
-      ? [...(circuitGroups.get(groupKey(bestStop.address)) || [bestStop.stopNumber])].sort((a, b) => a - b)
-      : []
-    return {
-      spxTn: pkg.spxTn,
-      address: pkg.address,
-      bairro: pkg.bairro,
-      city: pkg.city,
-      stopNumber: matched ? bestStop.stopNumber : null,
-      circuitAddress: matched ? bestStop.address : null,
-      groupStops,
-      score: Math.round(bestScore * 100),
-      matched,
-    }
-  })
-
-  return results.sort((a, b) => (a.stopNumber ?? 9999) - (b.stopNumber ?? 9999))
+  return stops
+    .map(s => ({
+      spxTn: s.spxTn,
+      address: s.address,
+      bairro: '',
+      city: '',
+      stopNumber: s.stopNumber,
+      circuitAddress: s.address,
+      groupStops: [...(groups.get(groupKey(s.address)) || [s.stopNumber])].sort((a, b) => a - b),
+      score: 100,
+      matched: true,
+    }))
+    .sort((a, b) => a.stopNumber - b.stopNumber)
 }
