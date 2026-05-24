@@ -5,6 +5,44 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).href
 
+// x mínimo da coluna Notes (Time fica em ~433; Notes em ~517)
+const NOTES_X_MIN = 480
+
+// "1 Rua Abrolhos, 53, Casa, Santo André 23:36" -> { stopNumber, address }
+export function parseStopLine(text) {
+  const m = text.match(/^(\d{1,3})\s+(.+?)\s+(\d{1,2}:\d{2})\s*$/)
+  if (!m) return null
+  const num = parseInt(m[1])
+  if (num < 1 || num > 999) return null
+  return { stopNumber: num, address: m[2].trim() }
+}
+
+// Associa os fragmentos da coluna Notes à parada mais próxima por y
+// e remonta o SPX TN (15 chars, ex: BR261103844377S).
+// stops: [{ stopNumber, address, y }] | noteItems: [{ text, x, y }]
+export function attachSpxTn(stops, noteItems) {
+  const buckets = stops.map(() => [])
+  for (const it of noteItems) {
+    if (it.x < NOTES_X_MIN) continue
+    let best = -1
+    let bestDy = Infinity
+    for (let i = 0; i < stops.length; i++) {
+      const dy = Math.abs(it.y - stops[i].y)
+      if (dy < bestDy) { bestDy = dy; best = i }
+    }
+    if (best >= 0 && bestDy <= 15) buckets[best].push(it)
+  }
+  return stops.map((stop, i) => {
+    const joined = buckets[i]
+      .sort((a, b) => b.y - a.y)
+      .map(f => f.text)
+      .join('')
+      .replace(/[^0-9A-Za-z]/g, '')
+    const m = joined.match(/BR[0-9A-Z]+/)
+    return { stopNumber: stop.stopNumber, address: stop.address, spxTn: m ? m[0] : '' }
+  })
+}
+
 function groupByLine(items, tolerance = 4) {
   if (!items.length) return []
   const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x)
