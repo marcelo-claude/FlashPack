@@ -136,15 +136,12 @@ export default function Scanner({ packages }) {
           <input style={s.searchInput} type="text" placeholder="Código SPX ou endereço..."
             value={search} onChange={e => handleSearch(e.target.value)}
             autoComplete="off" autoCorrect="off" spellCheck={false} />
-          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue os arquivos na aba Início primeiro.</p>}
+          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue o PDF na aba Início primeiro.</p>}
           {searchResults?.length === 0 && <div style={s.notFound}><p style={{ color: '#ff5252', fontSize: 20, fontWeight: 700 }}>Não encontrado</p></div>}
           {searchResults?.map((pkg, i) => (
             <div key={i} style={s.resultCard}>
-              {pkg.matched
-                ? <p style={s.bigNum}>#{pkg.stopNumber}</p>
-                : <p style={{ ...s.bigNum, color: '#bbb' }}>?</p>
-              }
-              {pkg.matched && pkg.groupStops?.length > 1 &&
+              <p style={s.bigNum}>#{pkg.stopNumber}</p>
+              {pkg.groupStops?.length > 1 &&
                 <p style={{ color: '#ffb300', fontSize: 13, fontWeight: 700 }}>⚠️ {pkg.groupStops.length} pacotes neste endereço: {formatStops(pkg.groupStops)}</p>}
               <p style={s.resultAddr}>{pkg.address}</p>
               <p style={s.resultCode}>{pkg.spxTn}</p>
@@ -163,7 +160,7 @@ export default function Scanner({ packages }) {
           <p style={{ fontSize: 64 }}>📷</p>
           <p style={s.startTitle}>Scanner de Pacotes</p>
           <p style={s.startDesc}>Aponte para o QR Code do pacote. O número da parada aparece em letras gigantes.</p>
-          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue os arquivos na aba Início primeiro.</p>}
+          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue o PDF na aba Início primeiro.</p>}
           <button style={s.startBtn} onClick={() => setShouldStart(true)}>Ativar câmera</button>
         </div>
       </div>
@@ -179,14 +176,9 @@ export default function Scanner({ packages }) {
             {overlay.found ? (
               <>
                 <p style={s.overlayLabel}>PARADA</p>
-                {overlay.matched ? (
-                  <p style={s.overlayNum}>#{overlay.stopNumber}</p>
-                ) : (
-                  <p style={{ ...s.overlayNum, color: '#bbb' }}>?</p>
-                )}
-                {overlay.matched && overlay.groupStops?.length > 1 &&
+                <p style={s.overlayNum}>#{overlay.stopNumber}</p>
+                {overlay.groupStops?.length > 1 &&
                   <p style={{ color: '#ffb300', fontSize: 15, fontWeight: 700 }}>⚠️ {overlay.groupStops.length} pacotes neste endereço: {formatStops(overlay.groupStops)}</p>}
-                {!overlay.matched && <p style={{ color: '#ff9800', fontSize: 14 }}>Pacote encontrado mas sem parada no Circuit</p>}
                 <p style={s.overlayAddr}>{overlay.address}</p>
                 <p style={s.overlayCode}>{overlay.spxTn}</p>
               </>
@@ -195,7 +187,7 @@ export default function Scanner({ packages }) {
                 <p style={{ color: '#ff5252', fontSize: 26, fontWeight: 700 }}>Não encontrado</p>
                 <p style={s.overlayCode}>{overlay.spxTn}</p>
                 <p style={{ color: '#666', fontSize: 13, textAlign: 'center' }}>
-                  {packages.length === 0 ? 'Carregue os arquivos primeiro' : 'QR Code não está na planilha'}
+                  {packages.length === 0 ? 'Carregue o PDF primeiro' : 'Código não está na rota'}
                 </p>
               </>
             )}

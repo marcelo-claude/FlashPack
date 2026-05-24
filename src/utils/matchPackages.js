@@ -44,12 +44,8 @@ export function buildPackages(stops) {
     .map(s => ({
       spxTn: s.spxTn,
       address: s.address,
-      bairro: '',
-      city: '',
       stopNumber: s.stopNumber,
-      circuitAddress: s.address,
       groupStops: [...(groups.get(groupKey(s.address)) || [s.stopNumber])].sort((a, b) => a - b),
-      score: 100,
       matched: true,
     }))
     .sort((a, b) => a.stopNumber - b.stopNumber)
