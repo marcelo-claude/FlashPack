@@ -13,8 +13,8 @@ function playBeep() {
   } catch {}
 }
 
-// "01 - 02 - 03" — números com 2 dígitos, em ordem crescente
-const formatStops = (nums) => nums.map(n => String(n).padStart(2, '0')).join(' - ')
+// "01/02/03" — números com 2 dígitos, em ordem crescente
+const formatStops = (nums) => nums.map(n => String(n).padStart(2, '0')).join('/')
 
 const isHttps = () =>
   typeof window !== 'undefined' &&
@@ -136,18 +136,13 @@ export default function Scanner({ packages }) {
           <input style={s.searchInput} type="text" placeholder="Código SPX ou endereço..."
             value={search} onChange={e => handleSearch(e.target.value)}
             autoComplete="off" autoCorrect="off" spellCheck={false} />
-          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue os arquivos na aba Início primeiro.</p>}
+          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue o PDF na aba Início primeiro.</p>}
           {searchResults?.length === 0 && <div style={s.notFound}><p style={{ color: '#ff5252', fontSize: 20, fontWeight: 700 }}>Não encontrado</p></div>}
           {searchResults?.map((pkg, i) => (
             <div key={i} style={s.resultCard}>
-              {pkg.matched
-                ? (pkg.groupStops?.length > 1
-                    ? <p style={s.bigMulti}>{formatStops(pkg.groupStops)}</p>
-                    : <p style={s.bigNum}>#{pkg.stopNumber}</p>)
-                : <p style={{ ...s.bigNum, color: '#bbb' }}>?</p>
-              }
-              {pkg.matched && pkg.groupStops?.length > 1 &&
-                <p style={{ color: '#ffb300', fontSize: 13, fontWeight: 700 }}>⚠️ {pkg.groupStops.length} pacotes neste endereço</p>}
+              <p style={s.bigNum}>#{pkg.stopNumber}</p>
+              {pkg.groupStops?.length > 1 &&
+                <p style={{ color: '#ffb300', fontSize: 13, fontWeight: 700 }}>⚠️ {pkg.groupStops.length} pacotes neste endereço: {formatStops(pkg.groupStops)}</p>}
               <p style={s.resultAddr}>{pkg.address}</p>
               <p style={s.resultCode}>{pkg.spxTn}</p>
             </div>
@@ -165,7 +160,7 @@ export default function Scanner({ packages }) {
           <p style={{ fontSize: 64 }}>📷</p>
           <p style={s.startTitle}>Scanner de Pacotes</p>
           <p style={s.startDesc}>Aponte para o QR Code do pacote. O número da parada aparece em letras gigantes.</p>
-          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue os arquivos na aba Início primeiro.</p>}
+          {packages.length === 0 && <p style={s.warn}>⚠️ Carregue o PDF na aba Início primeiro.</p>}
           <button style={s.startBtn} onClick={() => setShouldStart(true)}>Ativar câmera</button>
         </div>
       </div>
@@ -180,17 +175,10 @@ export default function Scanner({ packages }) {
           <div style={s.overlay} onClick={() => { clearTimeout(dismissTimer.current); setOverlay(null) }}>
             {overlay.found ? (
               <>
-                <p style={s.overlayLabel}>{overlay.matched && overlay.groupStops?.length > 1 ? 'PARADAS' : 'PARADA'}</p>
-                {overlay.matched ? (
-                  overlay.groupStops?.length > 1
-                    ? <p style={s.overlayMulti}>{formatStops(overlay.groupStops)}</p>
-                    : <p style={s.overlayNum}>#{overlay.stopNumber}</p>
-                ) : (
-                  <p style={{ ...s.overlayNum, color: '#bbb' }}>?</p>
-                )}
-                {overlay.matched && overlay.groupStops?.length > 1 &&
-                  <p style={{ color: '#ffb300', fontSize: 15, fontWeight: 700 }}>⚠️ {overlay.groupStops.length} pacotes neste endereço</p>}
-                {!overlay.matched && <p style={{ color: '#ff9800', fontSize: 14 }}>Pacote encontrado mas sem parada no Circuit</p>}
+                <p style={s.overlayLabel}>PARADA</p>
+                <p style={s.overlayNum}>#{overlay.stopNumber}</p>
+                {overlay.groupStops?.length > 1 &&
+                  <p style={{ color: '#ffb300', fontSize: 15, fontWeight: 700 }}>⚠️ {overlay.groupStops.length} pacotes neste endereço: {formatStops(overlay.groupStops)}</p>}
                 <p style={s.overlayAddr}>{overlay.address}</p>
                 <p style={s.overlayCode}>{overlay.spxTn}</p>
               </>
@@ -199,7 +187,7 @@ export default function Scanner({ packages }) {
                 <p style={{ color: '#ff5252', fontSize: 26, fontWeight: 700 }}>Não encontrado</p>
                 <p style={s.overlayCode}>{overlay.spxTn}</p>
                 <p style={{ color: '#666', fontSize: 13, textAlign: 'center' }}>
-                  {packages.length === 0 ? 'Carregue os arquivos primeiro' : 'QR Code não está na planilha'}
+                  {packages.length === 0 ? 'Carregue o PDF primeiro' : 'Código não está na rota'}
                 </p>
               </>
             )}
@@ -232,7 +220,6 @@ const s = {
   overlay: { position: 'absolute', inset: 0, background: 'rgba(10,10,30,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'pointer', gap: 8, zIndex: 10 },
   overlayLabel: { color: '#555', fontSize: 13, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase' },
   overlayNum: { color: '#1e88e5', fontSize: 110, fontWeight: 900, lineHeight: 1 },
-  overlayMulti: { color: '#1e88e5', fontSize: 64, fontWeight: 900, lineHeight: 1.1, textAlign: 'center', wordBreak: 'break-word' },
   overlayAddr: { color: '#eee', fontSize: 18, textAlign: 'center', lineHeight: 1.4, fontWeight: 500 },
   overlayCode: { color: '#444', fontSize: 13, fontFamily: 'monospace' },
   videoBox: { flex: 1, width: '100%', minHeight: 280, overflow: 'hidden' },
@@ -244,7 +231,6 @@ const s = {
   notFound: { background: '#1a0000', borderRadius: 12, padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
   resultCard: { background: '#0f0f1a', borderRadius: 12, padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
   bigNum: { color: '#1e88e5', fontSize: 72, fontWeight: 900, lineHeight: 1, margin: 0 },
-  bigMulti: { color: '#1e88e5', fontSize: 44, fontWeight: 900, lineHeight: 1.1, margin: 0, textAlign: 'center', wordBreak: 'break-word' },
   resultAddr: { color: '#eee', fontSize: 16, textAlign: 'center' },
   resultCode: { color: '#555', fontSize: 13, fontFamily: 'monospace' },
 }
