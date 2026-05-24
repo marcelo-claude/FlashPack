@@ -11,6 +11,10 @@ test('parseStopLine ignora linhas sem padrão de parada', () => {
   expect(parseStopLine('Tempo total: 8h52min')).toBeNull()
 })
 
+test('parseStopLine rejeita parada 0 (ex: linha de depósito/cabeçalho)', () => {
+  expect(parseStopLine('0 Depósito Central 10:00')).toBeNull()
+})
+
 test('attachSpxTn remonta o código da coluna Notes na parada mais próxima', () => {
   // Geometria real da página 1 (x=517 = coluna Notes; parada em y=722)
   const stops = [{ stopNumber: 1, address: 'Rua Abrolhos, 53', y: 722 }]

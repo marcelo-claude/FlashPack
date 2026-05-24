@@ -1,6 +1,12 @@
 // x mínimo da coluna Notes (Time fica em ~433; Notes em ~517)
 const NOTES_X_MIN = 480
 
+// Distância vertical máxima (em unidades do PDF) entre um fragmento da coluna
+// Notes e o y da parada. A linha da parada tem ~14 un.; os dois fragmentos do
+// SPX ficam ~5 acima/abaixo do baseline. 15 dá folga sem invadir a parada
+// vizinha (~32 un. de distância). Acima disso, o fragmento é descartado.
+const NOTES_Y_TOLERANCE = 15
+
 // "1 Rua Abrolhos, 53, Casa, Santo André 23:36" -> { stopNumber, address }
 export function parseStopLine(text) {
   const m = text.match(/^(\d{1,3})\s+(.+?)\s+(\d{1,2}:\d{2})\s*$/)
@@ -23,9 +29,11 @@ export function attachSpxTn(stops, noteItems) {
       const dy = Math.abs(it.y - stops[i].y)
       if (dy < bestDy) { bestDy = dy; best = i }
     }
-    if (best >= 0 && bestDy <= 15) buckets[best].push(it)
+    if (best >= 0 && bestDy <= NOTES_Y_TOLERANCE) buckets[best].push(it)
   }
   return stops.map((stop, i) => {
+    // Ordena de cima para baixo (y decrescente): o prefixo "BR..." vem antes
+    // do sufixo, senão a junção quebraria o código (a regex perderia o sufixo).
     const joined = buckets[i]
       .sort((a, b) => b.y - a.y)
       .map(f => f.text)
