@@ -6,5 +6,4 @@ export default defineConfig({
   plugins: [react(), basicSsl()],
   server: { https: true, host: true },
   optimizeDeps: { include: ['pdfjs-dist'] },
-  test: { setupFiles: ['./vitest.setup.js'] },
 })
