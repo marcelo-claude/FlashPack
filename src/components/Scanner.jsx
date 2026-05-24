@@ -13,8 +13,8 @@ function playBeep() {
   } catch {}
 }
 
-// "01 - 02 - 03" — números com 2 dígitos, em ordem crescente
-const formatStops = (nums) => nums.map(n => String(n).padStart(2, '0')).join(' - ')
+// "01/02/03" — números com 2 dígitos, em ordem crescente
+const formatStops = (nums) => nums.map(n => String(n).padStart(2, '0')).join('/')
 
 const isHttps = () =>
   typeof window !== 'undefined' &&
@@ -141,13 +141,11 @@ export default function Scanner({ packages }) {
           {searchResults?.map((pkg, i) => (
             <div key={i} style={s.resultCard}>
               {pkg.matched
-                ? (pkg.groupStops?.length > 1
-                    ? <p style={s.bigMulti}>{formatStops(pkg.groupStops)}</p>
-                    : <p style={s.bigNum}>#{pkg.stopNumber}</p>)
+                ? <p style={s.bigNum}>#{pkg.stopNumber}</p>
                 : <p style={{ ...s.bigNum, color: '#bbb' }}>?</p>
               }
               {pkg.matched && pkg.groupStops?.length > 1 &&
-                <p style={{ color: '#ffb300', fontSize: 13, fontWeight: 700 }}>⚠️ {pkg.groupStops.length} pacotes neste endereço</p>}
+                <p style={{ color: '#ffb300', fontSize: 13, fontWeight: 700 }}>⚠️ {pkg.groupStops.length} pacotes neste endereço: {formatStops(pkg.groupStops)}</p>}
               <p style={s.resultAddr}>{pkg.address}</p>
               <p style={s.resultCode}>{pkg.spxTn}</p>
             </div>
@@ -180,16 +178,14 @@ export default function Scanner({ packages }) {
           <div style={s.overlay} onClick={() => { clearTimeout(dismissTimer.current); setOverlay(null) }}>
             {overlay.found ? (
               <>
-                <p style={s.overlayLabel}>{overlay.matched && overlay.groupStops?.length > 1 ? 'PARADAS' : 'PARADA'}</p>
+                <p style={s.overlayLabel}>PARADA</p>
                 {overlay.matched ? (
-                  overlay.groupStops?.length > 1
-                    ? <p style={s.overlayMulti}>{formatStops(overlay.groupStops)}</p>
-                    : <p style={s.overlayNum}>#{overlay.stopNumber}</p>
+                  <p style={s.overlayNum}>#{overlay.stopNumber}</p>
                 ) : (
                   <p style={{ ...s.overlayNum, color: '#bbb' }}>?</p>
                 )}
                 {overlay.matched && overlay.groupStops?.length > 1 &&
-                  <p style={{ color: '#ffb300', fontSize: 15, fontWeight: 700 }}>⚠️ {overlay.groupStops.length} pacotes neste endereço</p>}
+                  <p style={{ color: '#ffb300', fontSize: 15, fontWeight: 700 }}>⚠️ {overlay.groupStops.length} pacotes neste endereço: {formatStops(overlay.groupStops)}</p>}
                 {!overlay.matched && <p style={{ color: '#ff9800', fontSize: 14 }}>Pacote encontrado mas sem parada no Circuit</p>}
                 <p style={s.overlayAddr}>{overlay.address}</p>
                 <p style={s.overlayCode}>{overlay.spxTn}</p>
@@ -232,7 +228,6 @@ const s = {
   overlay: { position: 'absolute', inset: 0, background: 'rgba(10,10,30,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, cursor: 'pointer', gap: 8, zIndex: 10 },
   overlayLabel: { color: '#555', fontSize: 13, fontWeight: 600, letterSpacing: 3, textTransform: 'uppercase' },
   overlayNum: { color: '#1e88e5', fontSize: 110, fontWeight: 900, lineHeight: 1 },
-  overlayMulti: { color: '#1e88e5', fontSize: 64, fontWeight: 900, lineHeight: 1.1, textAlign: 'center', wordBreak: 'break-word' },
   overlayAddr: { color: '#eee', fontSize: 18, textAlign: 'center', lineHeight: 1.4, fontWeight: 500 },
   overlayCode: { color: '#444', fontSize: 13, fontFamily: 'monospace' },
   videoBox: { flex: 1, width: '100%', minHeight: 280, overflow: 'hidden' },
@@ -244,7 +239,6 @@ const s = {
   notFound: { background: '#1a0000', borderRadius: 12, padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' },
   resultCard: { background: '#0f0f1a', borderRadius: 12, padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
   bigNum: { color: '#1e88e5', fontSize: 72, fontWeight: 900, lineHeight: 1, margin: 0 },
-  bigMulti: { color: '#1e88e5', fontSize: 44, fontWeight: 900, lineHeight: 1.1, margin: 0, textAlign: 'center', wordBreak: 'break-word' },
   resultAddr: { color: '#eee', fontSize: 16, textAlign: 'center' },
   resultCode: { color: '#555', fontSize: 13, fontFamily: 'monospace' },
 }

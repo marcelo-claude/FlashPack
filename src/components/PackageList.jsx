@@ -40,7 +40,7 @@ export default function PackageList({ packages }) {
               <p style={s.addr}>{pkg.address}</p>
               {pkg.matched && pkg.groupStops?.length > 1 && (
                 <p style={s.groupHint}>
-                  📦 {pkg.groupStops.length} pacotes aqui: {pkg.groupStops.map(n => String(n).padStart(2, '0')).join(' - ')}
+                  📦 {pkg.groupStops.length} pacotes aqui: {pkg.groupStops.map(n => String(n).padStart(2, '0')).join('/')}
                 </p>
               )}
               {pkg.matched && pkg.circuitAddress !== pkg.address && (
